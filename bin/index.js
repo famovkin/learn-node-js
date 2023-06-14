@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import readline from 'readline';
+import { messages, errors } from '../constants.js';
 
 const gameConfig = {
   minNumber: 0,
