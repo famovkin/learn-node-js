@@ -3,39 +3,61 @@ import yargs from 'yargs/yargs';
 import { hideBin } from 'yargs/helpers';
 
 const argv = yargs(hideBin(process.argv)).argv;
-const arrayArgv = Object.keys(argv);
+const dayParam = argv.day || argv.d;
+const monthParam = argv.month || argv.m;
+const yearParam = argv.year || argv.y;
+const isDefaultCallCli = Object.keys(argv).length === 2;
 const today = new Date();
 const currentDay = today.getDate();
 const currentMonth = today.getMonth();
 const currentYear = today.getFullYear();
+const mathsParams = argv._;
 
-const checkArgv = (longArgv, shortArgv, example, type) => {
-  if (arrayArgv.includes(longArgv) && arrayArgv.includes(shortArgv))
-    throw new Error(`Введите один параметр: ${example}`);
-  if (
-    (typeof argv[longArgv] !== 'number' && arrayArgv.includes(longArgv)) ||
-    (typeof argv[shortArgv] !== 'number' && arrayArgv.includes(shortArgv))
-  )
-    throw new Error(`Неверный тип, либо нет значения у параметра: ${type}`);
+const showDefaultFormatDate = () => console.log(today.toISOString());
+
+const showSelectedFormatDate = () => {
+  if (dayParam) console.log(`Текущий день: ${currentDay}`);
+  if (monthParam) console.log(`Текущий месяц: ${currentMonth}`);
+  if (yearParam) console.log(`Текущий год: ${currentYear}`);
 };
 
-if (arrayArgv.includes('add') || arrayArgv.includes('sub')) {
-  checkArgv('day', 'd', '--day или -d', 'день');
-  checkArgv('month', 'm', '--month или -m', 'месяц');
-  checkArgv('year', 'y', '--year или -y', 'год');
+const checkArgv = () => {
+  const errosInArgv = [];
 
-  if (argv['sub']) {
-    today.setDate(currentDay - ((argv.d || argv.day) || 0));
-    today.setMonth(currentMonth - ((argv.m || argv.month) || 0));
-    today.setFullYear(currentYear - ((argv.y || argv.year) || 0));
-  } else {
-    today.setDate(currentDay + ((argv.d || argv.day) || 0));
-    today.setMonth(currentMonth + ((argv.m || argv.month) || 0));
-    today.setFullYear(currentYear + ((argv.y || argv.year) || 0));
+  if (mathsParams.includes('add') && mathsParams.includes('sub')) {
+    throw new Error(`Введите один параметр: либо add, либо sub`);
   }
-  console.log(today.toISOString().substring(0, 10));
-} else {
-  if (arrayArgv.includes('day') || arrayArgv.includes('d')) console.log(`Текущий день: ${currentYear}`)
-  if (arrayArgv.includes('month') || arrayArgv.includes('m')) console.log(`Текущий месяц: ${currentMonth}`)
-  if (arrayArgv.includes('year') || arrayArgv.includes('y')) console.log(`Текущий год: ${currentDay}`)
-}
+
+  if (dayParam && typeof dayParam !== 'number') errosInArgv.push('день');
+  if (monthParam && typeof monthParam !== 'number') errosInArgv.push('месяц');
+  if (yearParam && typeof yearParam !== 'number') errosInArgv.push('год');
+
+  if (errosInArgv.length !== 0)
+    throw new Error(
+      `Неверный тип, либо нет значения у параметра: ${errosInArgv.join(', ')}`
+    );
+};
+
+const changeAndShowDate = () => {
+  checkArgv();
+  if (mathsParams.includes('add')) {
+    checkArgv();
+    today.setDate(currentDay + (dayParam || 0));
+    today.setMonth(currentMonth + (monthParam || 0));
+    today.setFullYear(currentYear + (yearParam || 0));
+  }
+
+  if (mathsParams.includes('sub')) {
+    checkArgv();
+    today.setDate(currentDay - (dayParam || 0));
+    today.setMonth(currentMonth - (monthParam || 0));
+    today.setFullYear(currentYear - (yearParam || 0));
+  }
+  console.log('Измененная дата:', today.toISOString().substring(0, 10));
+};
+
+isDefaultCallCli
+  ? showDefaultFormatDate()
+  : mathsParams.length
+    ? changeAndShowDate()
+    : showSelectedFormatDate();
