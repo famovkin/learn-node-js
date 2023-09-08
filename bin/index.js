@@ -9,23 +9,6 @@ const gameConfig = {
   hiddenNumber: 0,
 };
 
-const messages = {
-  start: 'Добро пожаловать в игру "Угадай число"!\nУсловия задаешь ты!',
-  getMinNumber: 'Введи минимальное число: ',
-  getMaxNumber: 'Введи максимальное число: ',
-  tryGuess: 'Попробуй угадать ',
-  tipGreater:
-    'Ты не угадал, но дам подсказку, введенное до этого число больше заданного',
-  tipLess:
-    'Ты не угадал, но дам подсказку, введенное до этого число меньше заданного',
-};
-
-const errors = {
-  wrongType: 'Не, нужно ввести число',
-  minGreaterThanMax: 'Второе число должно быть больше минимального',
-  tooEasy: 'Так будет неинтересно, загадай побольше',
-};
-
 const rl = readline.createInterface(process.stdin, process.stdout);
 
 console.log(messages.start);
