@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 import readline from 'readline';
+import fs from 'fs';
+
 import { messages, errors } from '../constants.js';
 
+let currGamelog = '';
+let logFileName = '';
+
 const gameConfig = {
-  minNumber: 0,
-  maxNumber: 0,
-  attempts: 1,
+  minNumber: 1,
+  maxNumber: 2,
   hiddenNumber: 0,
 };
 
@@ -13,54 +17,32 @@ const rl = readline.createInterface(process.stdin, process.stdout);
 
 console.log(messages.start);
 
-const askMinNumber = (res) => {
-  rl.question(messages.getMinNumber, (input) => {
-    const numberInput = Number(input);
-    if (input.length === 0 || Number.isNaN(numberInput)) {
-      console.log(errors.wrongType);
-      askMinNumber(res);
-      return;
-    }
-    gameConfig.minNumber = Number(input);
+const askLogFileNameForWrite = (res) => {
+  rl.question(messages.createFileName, (input) => {
+    logFileName = input;
+    fs.appendFile(`${input}.txt`, '', function (err) {
+      if (err) throw err;
+    });
     res();
   });
 };
 
-const askMaxNumber = (res) => {
-  rl.question(messages.getMaxNumber, (input) => {
-    const numberInput = Number(input);
-    if (input.length === 0 || Number.isNaN(numberInput)) {
-      console.log(errors.wrongType);
-      askMaxNumber(res);
-      return;
-    }
-    if (numberInput <= gameConfig.minNumber) {
-      console.log(errors.minGreaterThanMax);
-      askMaxNumber(res);
-      return;
-    }
-    if (numberInput - gameConfig.minNumber < 5) {
-      console.log(errors.tooEasy);
-      askMaxNumber(res);
-      return;
-    }
-    gameConfig.maxNumber = numberInput;
-    showGameSettings();
-    res();
-  });
-};
+gameConfig.hiddenNumber = Math.floor(
+  Math.random() * (gameConfig.maxNumber - gameConfig.minNumber + 1) +
+    gameConfig.minNumber
+);
 
-const showGameSettings = () => {
-  const { minNumber: min, maxNumber: max } = gameConfig;
-  console.log(
-    `Хорошо, условия простые: тебе нужно угадать число, которое я загадал.\nЧисло диапазоне от ${gameConfig.minNumber} до ${gameConfig.maxNumber}.\nУ тебя будет только 3 попытки.`
-  );
-  gameConfig.hiddenNumber = Math.floor(Math.random() * (max - min + 1) + min);
+const writeLogInFile = (isWin, res) => {
+  currGamelog = isWin ? 'win \n' : 'lose \n';
+  let writeStream = fs.createWriteStream(`${logFileName}.txt`, { flags: 'a' });
+  writeStream.write(currGamelog, 'utf-8');
+  writeStream.end();
+  console.log(isWin ? messages.winTxt : messages.loseTxt);
+  askPlayAgain(res);
+  return;
 };
 
 const solveGame = (res) => {
-  // console.log('Cheat', gameConfig.hiddenNumber);
-
   rl.question(messages.tryGuess, (input) => {
     const numberInput = Number(input);
     if (input.length === 0 || Number.isNaN(numberInput)) {
@@ -68,31 +50,21 @@ const solveGame = (res) => {
       solveGame(res);
       return;
     }
-    if (numberInput === gameConfig.hiddenNumber) {
-      console.log(
-        `Поздравляю! Ты победил!\nЯ загадал число ${gameConfig.hiddenNumber}`
-      );
-      rl.close();
-      res();
-      return;
-    }
-    if (gameConfig.attempts === 3) {
-      console.log(
-        `Хе-хе, победа за мной!\nЯ загадал число ${gameConfig.hiddenNumber}`
-      );
-      rl.close();
-      res();
-      return;
-    }
 
-    gameConfig.hiddenNumber > numberInput
-      ? console.log(messages.tipGreater)
-      : console.log(messages.tipLess);
-    gameConfig.attempts += 1;
-    solveGame(res);
+    const resultCurrGame = numberInput === gameConfig.hiddenNumber;
+    writeLogInFile(resultCurrGame, res);
   });
 };
 
-new Promise((res) => askMinNumber(res))
-  .then(() => new Promise((res) => askMaxNumber(res)))
+const askPlayAgain = (res) => {
+  rl.question(messages.retry, (input) => {
+    if (input.toLowerCase() === 'n') {
+      res();
+      rl.close();
+    } else if (input.toLowerCase() === 'y') solveGame(res);
+    else askPlayAgain(res);
+  });
+};
+
+new Promise((res) => askLogFileNameForWrite(res))
   .then(() => new Promise((res) => solveGame(res)));
