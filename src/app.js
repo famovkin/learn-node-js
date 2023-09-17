@@ -11,8 +11,8 @@ app.use((err, req, res, next) => {
   next();
 });
 
-function startApp() {
+const startApp = () => {
   app.listen(PORT, () => console.log(`App linstening on port: ${PORT}`));
-}
+};
 
 startApp();
